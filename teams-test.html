@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Polyscript Recorder — Test Teams</title>
+<style>body{font:16px system-ui,sans-serif;margin:0;padding:24px;background:#f6f8fc;color:#17345c}main{max-width:480px;margin:auto;background:white;padding:24px;border-radius:14px;border:1px solid #d8e2ef}h1{font-size:22px}p{line-height:1.5}#status{padding:12px;background:#eef4fb;border-radius:8px}</style>
+<script src="https://res.cdn.office.net/teams-js/2.19.0/js/MicrosoftTeams.min.js"></script>
+</head>
+<body><main><h1>Polyscript Recorder</h1><p id="description">Initialisation de la page de test…</p><p id="status" role="status">Connexion à Teams…</p><p>Version de test : aucune capture audio, aucune connexion à PolyScript.</p></main>
+<script>
+(async function () {
+  const status = document.getElementById("status");
+  const description = document.getElementById("description");
+  const timeout = setTimeout(() => {
+    status.textContent = "Ouvrez cette page depuis Teams. Si elle ne se charge pas dans Teams, vérifiez les en-têtes HTTPS et CSP du serveur.";
+  }, 12000);
+  try {
+    if (!window.microsoftTeams) throw new Error("Le SDK Teams n'a pas pu être chargé.");
+    await microsoftTeams.app.initialize();
+    clearTimeout(timeout);
+    if (new URLSearchParams(location.search).get("view") === "panel") {
+      description.textContent = "Application en préparation.";
+      status.textContent = "Le bouton Teams fonctionne. Aucun enregistrement n'est lancé.";
+      return;
+    }
+    description.textContent = "Cliquez sur Enregistrer dans Teams pour ajouter le bouton de test à cette réunion.";
+    const panelUrl = new URL(location.href);
+    panelUrl.search = "";
+    panelUrl.hash = "";
+    panelUrl.searchParams.set("view", "panel");
+    microsoftTeams.pages.config.registerOnSaveHandler(async function (event) {
+      try {
+        await microsoftTeams.pages.config.setConfig({
+          entityId: "polyscript-recorder-test-" + crypto.randomUUID(),
+          suggestedDisplayName: "Polyscript Recorder",
+          contentUrl: panelUrl.href,
+          websiteUrl: panelUrl.href
+        });
+        event.notifySuccess();
+      } catch (error) {
+        status.textContent = error.message;
+        event.notifyFailure("Impossible d'enregistrer la configuration.");
+      }
+    });
+    microsoftTeams.pages.config.setValidityState(true);
+    status.textContent = "Prêt à ajouter le bouton.";
+  } catch (error) {
+    clearTimeout(timeout);
+    status.textContent = error.message;
+  }
+})();
+</script></body></html>
+
